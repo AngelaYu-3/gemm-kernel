@@ -1,1 +1,1 @@
-# matmul-kernel
+# gemm-kernel
