@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # matmul-kernel
 
 ## coalescing global memory access
@@ -13,9 +12,6 @@
 - Uncoalesced-ish access on B where consecutive threads (adjacent x) read the same column pattern of B with stride N, and A access (`A[x*K+i]`) means adjacent threads (varying in x, same y) hit far-apart rows. Access patterns aren't optimized for the GPU's memory coalescing.
 - Bottleneck: memory-bound, not compute-bound and massively more global memory traffic than necessary relative to the FLOPs done, so achieved throughput is far below optimal performance.
 
-=======
-# gemm-kernel
-
 (in progress!)
 loosely following: https://siboehm.com/articles/22/CUDA-MMM
->>>>>>> 5fea7e8f132cc513e974214705604dfee39efc45
+
