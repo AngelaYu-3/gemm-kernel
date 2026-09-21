@@ -1,9 +1,5 @@
 # matmul-kernel
 
-## coalescing global memory access
-## shared memory caching
-## occupancy optimizations
-
 ## Kernel 1: Naive Implementation
 ![](outputs/naive.png)
 - One thread per output element — each thread computes exactly one entry of C via a full dot product over K, using `blockIdx`/`threadIdx` to map to a unique (x, y) position in the output matrix.
