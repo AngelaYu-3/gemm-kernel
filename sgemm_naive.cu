@@ -22,7 +22,7 @@ __global__ void sgemm_naive(int M, int N, int K, float alpha, const float *A,
 }
 
 int main() {
-  const int M = 256, N = 256, K = 256;
+  const int M = 4096, N = 4096, K = 4096;
   const float alpha = 1.0f, beta = 0.0f;
 
   size_t sizeA = M * K * sizeof(float);
@@ -50,14 +50,38 @@ int main() {
   dim3 gridDim(CEIL_DIV(M, 32), CEIL_DIV(N, 32), 1);
   // 32 * 32 = 1024 thread per block
   dim3 blockDim(32, 32, 1);
-  // launch the asynchronous execution of the kernel on the device
-  // The function call returns immediately on the host
+
+  // warm-up run, not timed (avoids counting one-time GPU/driver init cost)
   sgemm_naive<<<gridDim, blockDim>>>(M, N, K, alpha, dA, dB, beta, dC);
+  cudaDeviceSynchronize();
+
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
+  const int num_runs = 10;
+  cudaEventRecord(start);
+  for (int i = 0; i < num_runs; ++i) {
+    sgemm_naive<<<gridDim, blockDim>>>(M, N, K, alpha, dA, dB, beta, dC);
+  }
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+
+  float ms = 0.0f;
+  cudaEventElapsedTime(&ms, start, stop);
+  float avg_ms = ms / num_runs;
+
+  double gflops = (2.0 * M * N * K) / (avg_ms / 1000.0) / 1e9;
 
   cudaMemcpy(hC, dC, sizeC, cudaMemcpyDeviceToHost);
 
   // every entry should be K (1*1 summed K times), sanity check one value
   printf("C[0] = %f (expected %f)\n", hC[0], (float)K);
+  printf("Avg kernel time: %.3f ms\n", avg_ms);
+  printf("Achieved: %.2f GFLOPS\n", gflops);
+
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
 
   cudaFree(dA);
   cudaFree(dB);
